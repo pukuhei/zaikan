@@ -1,24 +1,24 @@
 # Google Compute Engine (GCE) デプロイガイド
 
-このガイドでは、Google Compute Engine上で「ざいかん！」を常時稼働させる手順を説明します。
+このガイドでは、Google Compute Engine 上で「ざいかん！」を常時稼働させる手順を説明します。
 
 ## 前提条件
 
-- Googleアカウント
+- Google アカウント
 - Google Cloud Platform (GCP) アカウント（クレジットカード登録必要）
-- 基本的なLinuxコマンドの知識
+- 基本的な Linux コマンドの知識
 
 ## 📋 セットアップ手順
 
-### 1. GCPプロジェクト作成
+### 1. GCP プロジェクト作成
 
 1. [Google Cloud Console](https://console.cloud.google.com/) にアクセス
 2. 新しいプロジェクトを作成
 3. 課金を有効化（無料枠使用のため）
 
-### 2. VMインスタンス作成
+### 2. VM インスタンス作成
 
-1. **Compute Engine** → **VMインスタンス** → **インスタンスを作成**
+1. **Compute Engine** → **VM インスタンス** → **インスタンスを作成**
 2. 以下の設定を選択：
 
 ```
@@ -38,7 +38,7 @@
 
 インスタンス作成後、アプリケーション用ポートを開放：
 
-1. **VPCネットワーク** → **ファイアウォール** → **ファイアウォールルールを作成**
+1. **VPC ネットワーク** → **ファイアウォール** → **ファイアウォールルールを作成**
 2. 以下を設定：
 
 ```
@@ -50,16 +50,16 @@
 プロトコルとポート: TCP - 3001
 ```
 
-3. VMインスタンスにタグを追加：
+3. VM インスタンスにタグを追加：
    - インスタンス詳細 → **編集** → ネットワークタグに `zaikan-server` を追加
 
-### 4. サーバーにSSH接続
+### 4. サーバーに SSH 接続
 
-VMインスタンス一覧から **SSH** ボタンをクリック
+VM インスタンス一覧から **SSH** ボタンをクリック
 
 ### 5. サーバー環境構築
 
-SSH接続後、以下のコマンドを順番に実行：
+SSH 接続後、以下のコマンドを順番に実行：
 
 ```bash
 # システム更新
@@ -121,17 +121,21 @@ pm2 save
 
 ```typescript
 // Serve frontend static files
-app.use(express.static(path.join(__dirname, '../../frontend/dist')));
+const frontendPath = path.join(__dirname, "../../frontend/dist");
+app.use(express.static(frontendPath));
 
-// Catch all handler: send back React's index.html file for SPA routing
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../../frontend/dist/index.html'));
+// APIエラーハンドラ
+app.use("/api/*", errorHandler);
+
+// SPA用 catch-all（API以外は全てindex.htmlを返す）
+app.get("*", (req, res) => {
+  res.sendFile(path.join(frontendPath, "index.html"));
 });
 ```
 
 ### 8. 動作確認
 
-1. VMインスタンスの外部IPアドレスを確認
+1. VM インスタンスの外部 IP アドレスを確認
 2. ブラウザで `http://[外部IPアドレス]:3001` にアクセス
 3. 「ざいかん！」アプリが表示されることを確認
 
@@ -191,19 +195,19 @@ gsutil cp database/zaikan.db gs://your-backup-bucket/
 
 ## 💰 想定コスト
 
-| 項目 | 月額料金 |
-|------|----------|
-| e2-micro インスタンス (744時間) | 無料枠 |
-| 標準永続ディスク (10GB) | $0.40 |
-| 外部IP (エフェメラル) | 無料 |
-| ネットワーク使用料 (〜1GB) | $0.12 |
-| **合計** | **約 $0.52/月** |
+| 項目                             | 月額料金        |
+| -------------------------------- | --------------- |
+| e2-micro インスタンス (744 時間) | 無料枠          |
+| 標準永続ディスク (10GB)          | $0.40           |
+| 外部 IP (エフェメラル)           | 無料            |
+| ネットワーク使用料 (〜1GB)       | $0.12           |
+| **合計**                         | **約 $0.52/月** |
 
 ## ⚠️ 注意事項
 
-1. **無料枠の制限**: e2-microインスタンスは月744時間（31日×24時間）まで無料
+1. **無料枠の制限**: e2-micro インスタンスは月 744 時間（31 日 ×24 時間）まで無料
 2. **予算管理**: 予算アラートを必ず設定してください
-3. **データ永続化**: VMインスタンスを削除するとデータが消失します
+3. **データ永続化**: VM インスタンスを削除するとデータが消失します
 4. **セキュリティ**: 本番環境では適切なファイアウォール設定を行ってください
 
 ## 🚨 トラブルシューティング
@@ -244,4 +248,4 @@ sudo systemctl disable snapd
 
 ## 📞 サポート
 
-このドキュメントで解決しない問題があれば、GitHubのIssueで報告してください。
+このドキュメントで解決しない問題があれば、GitHub の Issue で報告してください。
