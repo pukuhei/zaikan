@@ -41,7 +41,9 @@ app.get('/api/health', (req, res) => {
 });
 
 // Serve frontend static files (for production deployment)
-const frontendPath = path.join(__dirname, '../../frontend/dist');
+const frontendPath = path.join(__dirname, '../frontend/dist');
+console.log(frontendPath)
+
 app.use(express.static(frontendPath));
 
 // Error handling for API routes
