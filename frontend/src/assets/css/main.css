@@ -1,0 +1,222 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body {
+    @apply h-full;
+  }
+  
+  body {
+    @apply bg-gray-50 text-gray-900;
+  }
+  
+  #app {
+    @apply h-full;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105 active:scale-95;
+  }
+  
+  .btn-primary {
+    @apply btn bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500;
+  }
+  
+  .btn-secondary {
+    @apply btn bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500;
+  }
+  
+  .btn-danger {
+    @apply btn bg-red-600 text-white hover:bg-red-700 focus:ring-red-500;
+  }
+  
+  .btn-success {
+    @apply btn bg-green-600 text-white hover:bg-green-700 focus:ring-green-500;
+  }
+  
+  .form-input {
+    @apply block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500;
+  }
+  
+  .form-label {
+    @apply block text-sm font-medium text-gray-700 mb-1;
+  }
+  
+  .card {
+    @apply bg-white rounded-lg shadow p-6;
+  }
+  
+  .alert {
+    @apply p-4 rounded-md;
+  }
+  
+  .alert-success {
+    @apply alert bg-green-50 text-green-800 border border-green-200;
+  }
+  
+  .alert-warning {
+    @apply alert bg-yellow-50 text-yellow-800 border border-yellow-200;
+  }
+  
+  .alert-error {
+    @apply alert bg-red-50 text-red-800 border border-red-200;
+  }
+  
+  .alert-info {
+    @apply alert bg-blue-50 text-blue-800 border border-blue-200;
+  }
+  
+  /* Mobile responsive improvements */
+  .card {
+    @apply bg-white rounded-lg shadow p-4 sm:p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+  }
+  
+  /* FullCalendar mobile optimizations */
+  .fc-toolbar {
+    @apply flex-col sm:flex-row gap-2 sm:gap-0;
+  }
+  
+  .fc-toolbar-chunk {
+    @apply flex justify-center;
+  }
+  
+  .fc-button-group .fc-button {
+    @apply text-xs sm:text-sm px-2 sm:px-3;
+  }
+  
+  .fc-event {
+    @apply text-xs;
+  }
+  
+  .fc-daygrid-event {
+    @apply whitespace-nowrap overflow-hidden;
+  }
+  
+  /* モダンアニメーション */
+  .fade-enter-active, .fade-leave-active {
+    transition: opacity 0.3s ease;
+  }
+  .fade-enter-from, .fade-leave-to {
+    opacity: 0;
+  }
+  
+  .slide-up-enter-active {
+    transition: all 0.3s ease-out;
+  }
+  .slide-up-leave-active {
+    transition: all 0.3s ease-in;
+  }
+  .slide-up-enter-from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  .slide-up-leave-to {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  
+  .scale-enter-active {
+    transition: all 0.2s ease-out;
+  }
+  .scale-leave-active {
+    transition: all 0.2s ease-in;
+  }
+  .scale-enter-from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  .scale-leave-to {
+    transform: scale(1.05);
+    opacity: 0;
+  }
+  
+  /* ローディングアニメーション */
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+  
+  .loading-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  @keyframes bounce-in {
+    0% {
+      transform: scale(0.3);
+      opacity: 0;
+    }
+    50% {
+      transform: scale(1.05);
+    }
+    70% {
+      transform: scale(0.9);
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+  
+  .bounce-in {
+    animation: bounce-in 0.6s ease-out;
+  }
+  
+  @keyframes slide-in-right {
+    0% {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    100% {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+  
+  .slide-in-right {
+    animation: slide-in-right 0.3s ease-out;
+  }
+  
+  /* ホバーエフェクトの強化 */
+  .nav-link {
+    @apply transition-all duration-200 hover:scale-105 hover:bg-opacity-80;
+  }
+  
+  .interactive-card {
+    @apply cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-2 hover:bg-opacity-95;
+  }
+  
+  .btn-floating {
+    @apply transition-all duration-300 hover:shadow-2xl hover:-translate-y-1;
+  }
+  
+  /* マイクロインタラクション */
+  .ripple {
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .ripple:before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+  }
+  
+  .ripple:active:before {
+    width: 300px;
+    height: 300px;
+  }
+}
