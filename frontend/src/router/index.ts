@@ -6,9 +6,6 @@ import Manufacturing from '@/views/Manufacturing.vue'
 import Sales from '@/views/Sales.vue'
 import Orders from '@/views/Orders.vue'
 
-// Viteの型定義を明示的にインポート
-/// <reference types="vite/client" />
-
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [

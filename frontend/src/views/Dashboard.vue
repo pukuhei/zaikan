@@ -308,6 +308,7 @@ import { usePartsStore } from '@/stores/parts'
 import { useProductsStore } from '@/stores/products'
 import { manufacturingApi, salesApi, dashboardApi } from '@/services/api'
 import type { ManufacturingRecord, SalesRecord, Product, CreateManufacturingRecord, CreateSalesRecord } from '@/types'
+import type { CalendarOptions } from '@fullcalendar/core'
 
 // グローバルデータ用の型定義
 declare global {
@@ -350,8 +351,8 @@ const quickSellForm = ref<CreateSalesRecord & { unit_price: number }>({
   notes: '',
 })
 
-const { parts, lowStockParts, loading: partsLoading } = storeToRefs(partsStore)
-const { products, sortedProducts, loading: productsLoading } = storeToRefs(productsStore)
+const { parts, lowStockParts } = storeToRefs(partsStore)
+const { products, sortedProducts } = storeToRefs(productsStore)
 
 const totalParts = computed(() => parts.value.length)
 const totalProducts = computed(() => products.value.length)
@@ -378,7 +379,7 @@ const calendarOptions = ref({
     omitZeroMinute: false,
     meridiem: false
   }
-})
+} as CalendarOptions)
 
 const formatDate = (dateString: string) => {
   return format(new Date(dateString), 'M月d日', { locale: ja })
@@ -450,8 +451,6 @@ const fetchProductStats = async () => {
     monthlyProduction: number;
     monthlyRevenue: number;
   }> = {}
-
-  const currentMonth = format(new Date(), 'yyyy-MM')
 
   for (const product of products.value) {
     try {
