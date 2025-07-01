@@ -1,8 +1,8 @@
 <template>
-  <div class="space-y-6">
-    <div>
-      <h1 class="text-2xl font-bold text-gray-900">ダッシュボード</h1>
-      <p class="mt-1 text-sm text-gray-600">在庫管理システムの概要</p>
+  <div class="space-y-8">
+    <div class="text-center sm:text-left">
+      <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">ダッシュボード</h1>
+      <p class="text-base text-gray-600">在庫管理システムの概要</p>
     </div>
 
     <!-- ローディング状態 -->
@@ -40,17 +40,17 @@
     </div>
 
     <!-- 商品ごとの詳細カード -->
-    <div class="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <div class="grid grid-cols-1 gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-3">
       <div v-for="(product, index) in sortedProducts" :key="product.id"
            class="card border-l-4 border-l-blue-500 interactive-card bounce-in"
            :style="{ animationDelay: `${index * 100}ms` }">
-        <div class="flex justify-between items-start mb-4">
+        <div class="flex justify-between items-start mb-6">
           <div>
-            <h3 class="text-lg font-semibold text-gray-900">{{ product.name }}</h3>
+            <h3 class="text-xl font-bold text-gray-900 mb-2">{{ product.name }}</h3>
             <p class="text-sm text-gray-600">在庫: {{ product.current_stock }}個</p>
           </div>
           <div class="text-right">
-            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
                   :class="product.current_stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
               {{ product.current_stock > 0 ? '在庫あり' : '在庫なし' }}
             </span>
@@ -58,37 +58,37 @@
         </div>
 
         <!-- 生産・売上情報 -->
-        <div class="grid grid-cols-3 gap-4 mb-4">
-          <div class="text-center">
-            <div class="text-xs text-gray-500">今月生産</div>
-            <div class="text-lg font-medium text-blue-600">{{ productStats[product.id]?.monthlyProduction || 0 }}個</div>
+        <div class="grid grid-cols-3 gap-4 mb-6">
+          <div class="text-center p-4 bg-blue-50 rounded-xl">
+            <div class="text-xs font-semibold text-blue-600 mb-2">今月生産</div>
+            <div class="text-2xl font-bold text-blue-700">{{ productStats[product.id]?.monthlyProduction || 0 }}<span class="text-sm font-normal ml-1">個</span></div>
           </div>
-          <div class="text-center">
-            <div class="text-xs text-gray-500">生産可能</div>
-            <div class="text-lg font-medium text-green-600">{{ manufacturingCapacities[product.id] || 0 }}個</div>
+          <div class="text-center p-4 bg-green-50 rounded-xl">
+            <div class="text-xs font-semibold text-green-600 mb-2">生産可能</div>
+            <div class="text-2xl font-bold text-green-700">{{ manufacturingCapacities[product.id] || 0 }}<span class="text-sm font-normal ml-1">個</span></div>
           </div>
-          <div class="text-center">
-            <div class="text-xs text-gray-500">今月売上</div>
-            <div class="text-lg font-medium text-purple-600">¥{{ (productStats[product.id]?.monthlyRevenue || 0).toLocaleString() }}</div>
+          <div class="text-center p-4 bg-purple-50 rounded-xl">
+            <div class="text-xs font-semibold text-purple-600 mb-2">今月売上</div>
+            <div class="text-lg font-bold text-purple-700">¥{{ (productStats[product.id]?.monthlyRevenue || 0).toLocaleString() }}</div>
           </div>
         </div>
 
         <!-- クイックアクション -->
-        <div class="flex space-x-2">
+        <div class="flex space-x-3">
           <button
             @click="openQuickManufactureModal(product)"
             :disabled="(manufacturingCapacities[product.id] || 0) === 0"
-            class="btn-success ripple text-xs px-3 py-2 flex-1 disabled:bg-gray-300 disabled:cursor-not-allowed"
+            class="btn-success ripple text-sm px-4 py-3 flex-1 disabled:bg-gray-300 disabled:cursor-not-allowed"
           >
-            <CogIcon class="w-4 h-4 mr-1" />
+            <CogIcon class="w-4 h-4 mr-2" />
             製造
           </button>
           <button
             @click="openQuickSellModal(product)"
             :disabled="product.current_stock === 0"
-            class="ripple text-xs px-3 py-2 flex-1 bg-purple-600 text-white hover:bg-purple-700 rounded-md disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center transition-all duration-200 transform hover:scale-105 active:scale-95"
+            class="ripple text-sm px-4 py-3 flex-1 bg-purple-600 text-white hover:bg-purple-700 rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-sm"
           >
-            <ShoppingCartIcon class="w-4 h-4 mr-1" />
+            <ShoppingCartIcon class="w-4 h-4 mr-2" />
             販売
           </button>
         </div>
@@ -127,7 +127,7 @@
 
 
     <!-- 統計サマリー -->
-    <div class="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-4">
+    <div class="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-4">
       <div class="card text-center interactive-card slide-in-right" style="animation-delay: 0ms;">
         <CubeIcon class="h-8 w-8 text-primary-600 mx-auto mb-2" />
         <div class="text-lg font-medium text-gray-900">{{ totalParts }}</div>
@@ -151,7 +151,7 @@
     </div>
 
     <!-- 最近の活動 -->
-    <div class="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
+    <div class="grid grid-cols-1 gap-6 sm:gap-8 lg:grid-cols-2">
       <!-- 最近の製造記録 -->
       <div class="card">
         <h3 class="text-base sm:text-lg font-medium text-gray-900 mb-4">最近の製造記録</h3>

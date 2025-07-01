@@ -54,7 +54,7 @@
       </Transition>
     </nav>
 
-    <main class="py-10">
+    <main class="py-6 sm:py-8 lg:py-12">
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <router-view v-slot="{ Component }">
           <Transition name="fade" mode="out-in">

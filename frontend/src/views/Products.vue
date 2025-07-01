@@ -61,6 +61,9 @@
                 <button @click="openSellModal(product)" class="text-xs px-2 py-1 bg-purple-600 text-white hover:bg-purple-700 rounded-md">
                   販売
                 </button>
+                <button @click="openCopyModal(product)" class="text-xs px-2 py-1 bg-blue-600 text-white hover:bg-blue-700 rounded-md">
+                  コピー
+                </button>
                 <button @click="editProduct(product)" class="btn-secondary text-xs px-2 py-1">
                   編集
                 </button>
@@ -231,6 +234,39 @@
         </form>
       </div>
     </div>
+
+    <!-- 商品コピーモーダル -->
+    <div v-if="showCopyModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+      <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <h3 class="text-lg font-bold text-gray-900 mb-4">商品コピー - {{ selectedProduct?.name }}</h3>
+        <form @submit.prevent="submitCopy">
+          <div class="space-y-4">
+            <div>
+              <label class="form-label">新しい商品名 *</label>
+              <input
+                v-model="copyForm.name"
+                type="text"
+                required
+                class="form-input"
+                placeholder="例: {{ selectedProduct?.name }} (コピー)"
+              />
+            </div>
+            <div class="bg-blue-50 p-4 rounded-lg">
+              <h4 class="text-sm font-medium text-blue-900 mb-2">コピーされる内容:</h4>
+              <ul class="text-xs text-blue-800 space-y-1">
+                <li>• 販売価格: ¥{{ selectedProduct?.selling_price?.toLocaleString() || '未設定' }}</li>
+                <li>• レシピ: すべての部品と必要数量</li>
+                <li>• 初期在庫: 0個（在庫は別途追加が必要）</li>
+              </ul>
+            </div>
+          </div>
+          <div class="mt-6 flex space-x-3">
+            <button type="submit" class="btn-primary flex-1">コピー実行</button>
+            <button type="button" @click="closeModals" class="btn-secondary flex-1">キャンセル</button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -255,6 +291,7 @@ const showEditModal = ref(false)
 const showRecipeModal = ref(false)
 const showManufactureModal = ref(false)
 const showSellModal = ref(false)
+const showCopyModal = ref(false)
 const editingProduct = ref<Product | null>(null)
 const selectedProduct = ref<Product | null>(null)
 const selectedProductCapacity = ref<ManufacturingCapacity | null>(null)
@@ -278,6 +315,10 @@ const saleForm = ref<CreateSalesRecord & { unit_price: number }>({
   unit_price: 0,
   sale_date: format(new Date(), 'yyyy-MM-dd'),
   notes: '',
+})
+
+const copyForm = ref({
+  name: '',
 })
 
 const resetForm = () => {
@@ -339,12 +380,21 @@ const openSellModal = (product: Product) => {
   showSellModal.value = true
 }
 
+const openCopyModal = (product: Product) => {
+  selectedProduct.value = product
+  copyForm.value = {
+    name: `${product.name} (コピー)`,
+  }
+  showCopyModal.value = true
+}
+
 const closeModals = () => {
   showCreateModal.value = false
   showEditModal.value = false
   showRecipeModal.value = false
   showManufactureModal.value = false
   showSellModal.value = false
+  showCopyModal.value = false
   editingProduct.value = null
   selectedProduct.value = null
   selectedProductCapacity.value = null
@@ -411,6 +461,18 @@ const submitSale = async () => {
     closeModals()
   } catch (error) {
     console.error('Failed to sell product:', error)
+  }
+}
+
+const submitCopy = async () => {
+  if (!selectedProduct.value) return
+
+  try {
+    await productsStore.copyProduct(selectedProduct.value.id, copyForm.value.name)
+    closeModals()
+    await fetchManufacturingCapacities()
+  } catch (error) {
+    console.error('Failed to copy product:', error)
   }
 }
 

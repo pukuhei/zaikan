@@ -44,6 +44,7 @@ export const productsApi = {
   getRecipe: (id: number) => api.get<ProductRecipe[]>(`/products/${id}/recipe`),
   setRecipe: (id: number, recipes: CreateProductRecipe[]) => api.post<ProductRecipe[]>(`/products/${id}/recipe`, { recipes }),
   sell: (id: number, data: CreateSalesRecord & { unit_price: number }) => api.post<Product>(`/products/${id}/sell`, data),
+  copy: (id: number, name: string) => api.post<{ product: Product, recipe: ProductRecipe[] }>(`/products/${id}/copy`, { name }),
 }
 
 // Stock Entries API

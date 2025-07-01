@@ -127,6 +127,21 @@ export const useProductsStore = defineStore('products', () => {
     }
   }
 
+  async function copyProduct(id: number, name: string) {
+    loading.value = true
+    error.value = null
+    try {
+      const response = await productsApi.copy(id, name)
+      products.value.push(response.data.product)
+      return response.data
+    } catch (err: any) {
+      error.value = err.response?.data?.error || 'Failed to copy product'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   async function fetchManufacturingCapacity(productId: number) {
     loading.value = true
     error.value = null
@@ -157,6 +172,7 @@ export const useProductsStore = defineStore('products', () => {
     fetchProductRecipe,
     setProductRecipe,
     sellProduct,
+    copyProduct,
     fetchManufacturingCapacity,
   }
 })

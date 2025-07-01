@@ -184,6 +184,88 @@ router.post('/:id/recipe', (req, res, next) => {
   }
 });
 
+// 商品コピー（レシピも含む）
+router.post('/:id/copy', (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { name } = req.body;
+    
+    if (!name || typeof name !== 'string') {
+      return res.status(400).json({ error: '新しい商品名が必要です' });
+    }
+    
+    const originalProduct = db.prepare('SELECT * FROM products WHERE id = ?').get(id) as any;
+    if (!originalProduct) {
+      return res.status(404).json({ error: '商品が見つかりません' });
+    }
+    
+    // 既存の商品名をチェック
+    const existingProduct = db.prepare('SELECT * FROM products WHERE name = ?').get(name) as any;
+    if (existingProduct) {
+      return res.status(400).json({ error: 'その商品名は既に使用されています' });
+    }
+    
+    const transaction = db.transaction(() => {
+      // 新しい商品を作成（在庫は0で開始）
+      const newProductStmt = db.prepare(`
+        INSERT INTO products (name, selling_price, current_stock)
+        VALUES (?, ?, 0)
+      `);
+      
+      const newProductResult = newProductStmt.run(
+        name,
+        originalProduct.selling_price
+      );
+      
+      const newProductId = newProductResult.lastInsertRowid;
+      
+      // 元の商品のレシピを取得
+      const originalRecipes = db.prepare(`
+        SELECT part_id, quantity_required
+        FROM product_recipes
+        WHERE product_id = ?
+      `).all(id);
+      
+      // レシピを新しい商品にコピー
+      if (originalRecipes.length > 0) {
+        const copyRecipeStmt = db.prepare(`
+          INSERT INTO product_recipes (product_id, part_id, quantity_required)
+          VALUES (?, ?, ?)
+        `);
+        
+        originalRecipes.forEach((recipe: any) => {
+          copyRecipeStmt.run(
+            newProductId,
+            recipe.part_id,
+            recipe.quantity_required
+          );
+        });
+      }
+      
+      return newProductId;
+    });
+    
+    const newProductId = transaction();
+    
+    // 新しい商品とそのレシピを返す
+    const newProduct = db.prepare('SELECT * FROM products WHERE id = ?').get(newProductId) as any;
+    const newRecipe = db.prepare(`
+      SELECT pr.*, p.name as part_name, p.unit_price as part_unit_price, p.current_stock as part_current_stock
+      FROM product_recipes pr
+      JOIN parts p ON pr.part_id = p.id
+      WHERE pr.product_id = ?
+      ORDER BY p.name
+    `).all(newProductId);
+    
+    res.status(201).json({
+      product: newProduct,
+      recipe: newRecipe
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // 商品販売
 router.post('/:id/sell', (req, res, next) => {
   try {
