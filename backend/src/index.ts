@@ -21,8 +21,18 @@ const PORT = process.env.PORT || 3001;
 initializeDatabase();
 
 // Middleware
-app.use(helmet());
-app.use(cors());
+// HTTP環境用のhelmet設定（セキュリティヘッダー調整）
+app.use(helmet({
+  contentSecurityPolicy: false, // CSPを無効化（HTTP環境での混合コンテンツエラー回避）
+  crossOriginOpenerPolicy: false, // COOPヘッダー無効化
+  crossOriginResourcePolicy: false, // CORPヘッダー無効化
+  originAgentCluster: false, // Origin-Agent-Clusterヘッダー無効化
+  hsts: false // HSTS無効化（HTTP環境では不要）
+}));
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' ? true : '*', // 本番環境では適切に設定
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -42,8 +52,6 @@ app.get('/api/health', (req, res) => {
 
 // Serve frontend static files (for production deployment)
 const frontendPath = path.resolve(__dirname, '../../frontend/dist');
-console.log(frontendPath);
-console.log(path.join(frontendPath, 'index.html'));
 
 app.use(express.static(frontendPath));
 
