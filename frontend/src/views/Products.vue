@@ -147,7 +147,7 @@
     <div v-if="showManufactureModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
       <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
         <h3 class="text-lg font-bold text-gray-900 mb-4">商品製造 - {{ selectedProduct?.name }}</h3>
-        
+
         <!-- 製造可能数表示 -->
         <div v-if="selectedProductCapacity" class="mb-4 p-4 bg-blue-50 rounded">
           <p class="text-sm font-medium text-blue-900">最大製造可能数: {{ selectedProductCapacity.max_manufacturable }}個</p>
@@ -165,13 +165,13 @@
           <div class="space-y-4">
             <div>
               <label class="form-label">製造数量 *</label>
-              <input 
-                v-model.number="manufactureForm.quantity" 
-                type="number" 
-                min="1" 
+              <input
+                v-model.number="manufactureForm.quantity"
+                type="number"
+                min="1"
                 :max="selectedProductCapacity?.max_manufacturable"
-                required 
-                class="form-input" 
+                required
+                class="form-input"
               />
             </div>
             <div>
@@ -199,13 +199,13 @@
           <div class="space-y-4">
             <div>
               <label class="form-label">販売数量 *</label>
-              <input 
-                v-model.number="saleForm.quantity" 
-                type="number" 
-                min="1" 
+              <input
+                v-model.number="saleForm.quantity"
+                type="number"
+                min="1"
                 :max="selectedProduct?.current_stock"
-                required 
-                class="form-input" 
+                required
+                class="form-input"
               />
               <p class="text-xs text-gray-500 mt-1">
                 在庫: {{ selectedProduct?.current_stock }}個
@@ -235,7 +235,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { format } from 'date-fns'
 import { useProductsStore } from '@/stores/products'
@@ -246,8 +246,8 @@ import type { Product, CreateProduct, CreateProductRecipe, CreateManufacturingRe
 const productsStore = useProductsStore()
 const partsStore = usePartsStore()
 
-const { products, sortedProducts, loading } = storeToRefs(productsStore)
-const { parts, sortedParts } = storeToRefs(partsStore)
+const { products, sortedProducts } = storeToRefs(productsStore)
+const { sortedParts } = storeToRefs(partsStore)
 
 const manufacturingCapacities = ref<Record<number, number>>({})
 const showCreateModal = ref(false)
@@ -378,7 +378,7 @@ const submitProduct = async () => {
 
 const submitRecipe = async () => {
   if (!selectedProduct.value) return
-  
+
   try {
     const validRecipes = recipeForm.value.filter(r => r.part_id > 0)
     await productsStore.setProductRecipe(selectedProduct.value.id, validRecipes)
@@ -391,7 +391,7 @@ const submitRecipe = async () => {
 
 const submitManufacture = async () => {
   if (!selectedProduct.value) return
-  
+
   try {
     await manufacturingApi.manufacture(selectedProduct.value.id, manufactureForm.value)
     await productsStore.fetchProducts()
@@ -405,7 +405,7 @@ const submitManufacture = async () => {
 
 const submitSale = async () => {
   if (!selectedProduct.value) return
-  
+
   try {
     await productsStore.sellProduct(selectedProduct.value.id, saleForm.value)
     closeModals()
@@ -427,7 +427,7 @@ const deleteProduct = async (id: number) => {
 
 const fetchManufacturingCapacities = async () => {
   const capacities: Record<number, number> = {}
-  
+
   for (const product of products.value) {
     try {
       const capacity = await manufacturingApi.getCapacity(product.id)
@@ -436,7 +436,7 @@ const fetchManufacturingCapacities = async () => {
       capacities[product.id] = 0
     }
   }
-  
+
   manufacturingCapacities.value = capacities
 }
 

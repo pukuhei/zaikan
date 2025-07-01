@@ -213,7 +213,7 @@ import { usePartsStore } from '@/stores/parts'
 import type { Part, CreatePart, CreateStockEntry, CreatePartOrder } from '@/types'
 
 const partsStore = usePartsStore()
-const { parts, loading } = storeToRefs(partsStore)
+const { parts } = storeToRefs(partsStore)
 
 const searchQuery = ref('')
 const stockFilter = ref('')
@@ -248,7 +248,7 @@ const filteredParts = computed(() => {
   let filtered = parts.value
 
   if (searchQuery.value) {
-    filtered = filtered.filter(part => 
+    filtered = filtered.filter(part =>
       part.name.toLowerCase().includes(searchQuery.value.toLowerCase())
     )
   }
@@ -345,7 +345,7 @@ const submitPart = async () => {
 
 const submitStock = async () => {
   if (!selectedPart.value) return
-  
+
   try {
     await partsStore.addStock(selectedPart.value.id, stockForm.value)
     closeModals()
@@ -356,7 +356,7 @@ const submitStock = async () => {
 
 const submitOrder = async () => {
   if (!selectedPart.value) return
-  
+
   try {
     await partsStore.createOrder(selectedPart.value.id, orderForm.value)
     closeModals()

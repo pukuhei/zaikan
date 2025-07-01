@@ -41,7 +41,7 @@
 
     <!-- 商品ごとの詳細カード -->
     <div class="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
-      <div v-for="(product, index) in sortedProducts" :key="product.id" 
+      <div v-for="(product, index) in sortedProducts" :key="product.id"
            class="card border-l-4 border-l-blue-500 interactive-card bounce-in"
            :style="{ animationDelay: `${index * 100}ms` }">
         <div class="flex justify-between items-start mb-4">
@@ -56,7 +56,7 @@
             </span>
           </div>
         </div>
-        
+
         <!-- 生産・売上情報 -->
         <div class="grid grid-cols-3 gap-4 mb-4">
           <div class="text-center">
@@ -72,18 +72,18 @@
             <div class="text-lg font-medium text-purple-600">¥{{ (productStats[product.id]?.monthlyRevenue || 0).toLocaleString() }}</div>
           </div>
         </div>
-        
+
         <!-- クイックアクション -->
         <div class="flex space-x-2">
-          <button 
-            @click="openQuickManufactureModal(product)" 
+          <button
+            @click="openQuickManufactureModal(product)"
             :disabled="(manufacturingCapacities[product.id] || 0) === 0"
             class="btn-success ripple text-xs px-3 py-2 flex-1 disabled:bg-gray-300 disabled:cursor-not-allowed"
           >
             <CogIcon class="w-4 h-4 mr-1" />
             製造
           </button>
-          <button 
+          <button
             @click="openQuickSellModal(product)"
             :disabled="product.current_stock === 0"
             class="ripple text-xs px-3 py-2 flex-1 bg-purple-600 text-white hover:bg-purple-700 rounded-md disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center transition-all duration-200 transform hover:scale-105 active:scale-95"
@@ -149,7 +149,7 @@
         <div class="text-xs text-gray-500">今月の売上</div>
       </div>
     </div>
-    
+
     <!-- 最近の活動 -->
     <div class="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
       <!-- 最近の製造記録 -->
@@ -209,13 +209,13 @@
               <div class="space-y-4">
                 <div>
                   <label class="form-label text-sm">製造数量 *</label>
-                  <input 
-                    v-model.number="quickManufactureForm.quantity" 
-                    type="number" 
-                    min="1" 
+                  <input
+                    v-model.number="quickManufactureForm.quantity"
+                    type="number"
+                    min="1"
                     :max="manufacturingCapacities[selectedProduct?.id || 0]"
-                    required 
-                    class="form-input text-sm" 
+                    required
+                    class="form-input text-sm"
                   />
                   <p class="text-xs text-gray-500 mt-1">
                     最大製造可能: {{ manufacturingCapacities[selectedProduct?.id || 0] }}個
@@ -250,13 +250,13 @@
               <div class="space-y-4">
                 <div>
                   <label class="form-label text-sm">販売数量 *</label>
-                  <input 
-                    v-model.number="quickSellForm.quantity" 
-                    type="number" 
-                    min="1" 
+                  <input
+                    v-model.number="quickSellForm.quantity"
+                    type="number"
+                    min="1"
                     :max="selectedProduct?.current_stock"
-                    required 
-                    class="form-input text-sm" 
+                    required
+                    class="form-input text-sm"
                   />
                   <p class="text-xs text-gray-500 mt-1">
                     在庫: {{ selectedProduct?.current_stock }}個
@@ -376,7 +376,7 @@ const calendarOptions = ref({
     hour: 'numeric',
     minute: '2-digit',
     omitZeroMinute: false,
-    meridiem: 'short'
+    meridiem: false
   }
 })
 
@@ -394,22 +394,22 @@ const fetchDashboardData = async () => {
     const currentMonth = format(new Date(), 'yyyy-MM')
     const currentMonthStart = currentMonth + '-01'
     const currentMonthEnd = currentMonth + '-31'
-    
+
     const salesResponse = await salesApi.getAll({
       start_date: currentMonthStart,
       end_date: currentMonthEnd
     })
-    
+
     // 最近の売上記録（表示用）
     const allSalesResponse = await salesApi.getAll()
     recentSales.value = allSalesResponse.data.slice(0, 10)
 
     // 今月の総売上を計算
     monthlyRevenue.value = salesResponse.data.reduce((sum, sale) => sum + sale.total_amount, 0)
-    
+
     // 商品統計用に今月のデータを保存
     window.currentMonthSales = salesResponse.data
-    window.currentMonthManufacturing = manufacturingResponse.data.filter(record => 
+    window.currentMonthManufacturing = manufacturingResponse.data.filter(record =>
       record.manufacturing_date.startsWith(currentMonth)
     )
   } catch (error) {
@@ -422,7 +422,7 @@ const fetchCalendarData = async () => {
     const now = new Date()
     const year = now.getFullYear()
     const month = now.getMonth() + 1
-    
+
     const response = await dashboardApi.getCalendar(year, month)
     calendarEvents.value = response.data.events
   } catch (error) {
@@ -432,7 +432,7 @@ const fetchCalendarData = async () => {
 
 const fetchManufacturingCapacities = async () => {
   const capacities: Record<number, number> = {}
-  
+
   for (const product of products.value) {
     try {
       const capacity = await manufacturingApi.getCapacity(product.id)
@@ -441,7 +441,7 @@ const fetchManufacturingCapacities = async () => {
       capacities[product.id] = 0
     }
   }
-  
+
   manufacturingCapacities.value = capacities
 }
 
@@ -450,23 +450,23 @@ const fetchProductStats = async () => {
     monthlyProduction: number;
     monthlyRevenue: number;
   }> = {}
-  
+
   const currentMonth = format(new Date(), 'yyyy-MM')
-  
+
   for (const product of products.value) {
     try {
       // 今月の製造数を取得（グローバルデータから）
-      const monthlyManufacturing = (window.currentMonthManufacturing || []).filter(record => 
+      const monthlyManufacturing = (window.currentMonthManufacturing || []).filter(record =>
         record.product_id === product.id
       )
       const monthlyProduction = monthlyManufacturing.reduce((sum, record) => sum + record.quantity, 0)
-      
+
       // 今月の売上を取得（グローバルデータから）
-      const monthlySales = (window.currentMonthSales || []).filter(sale => 
+      const monthlySales = (window.currentMonthSales || []).filter(sale =>
         sale.product_id === product.id
       )
       const monthlyRevenue = monthlySales.reduce((sum, sale) => sum + sale.total_amount, 0)
-      
+
       stats[product.id] = {
         monthlyProduction,
         monthlyRevenue
@@ -479,7 +479,7 @@ const fetchProductStats = async () => {
       }
     }
   }
-  
+
   productStats.value = stats
 }
 
@@ -513,26 +513,26 @@ const closeModals = () => {
 
 const submitQuickManufacture = async () => {
   if (!selectedProduct.value) return
-  
+
   try {
     await manufacturingApi.manufacture(selectedProduct.value.id, quickManufactureForm.value)
-    
+
     // データを再取得
     await Promise.all([
       productsStore.fetchProducts(),
       partsStore.fetchParts(),
     ])
-    
+
     // ダッシュボードデータを再取得
     await fetchDashboardData()
-    
+
     // その他のデータを再取得
     await Promise.all([
       fetchCalendarData(),
       fetchManufacturingCapacities(),
       fetchProductStats(),
     ])
-    
+
     closeModals()
   } catch (error) {
     console.error('Failed to manufacture product:', error)
@@ -541,15 +541,15 @@ const submitQuickManufacture = async () => {
 
 const submitQuickSell = async () => {
   if (!selectedProduct.value) return
-  
+
   try {
     await productsStore.sellProduct(selectedProduct.value.id, quickSellForm.value)
-    
+
     // データを再取得
     await productsStore.fetchProducts()
     await fetchDashboardData()
     await fetchProductStats()
-    
+
     closeModals()
   } catch (error) {
     console.error('Failed to sell product:', error)
@@ -569,20 +569,20 @@ onMounted(async () => {
     partsStore.fetchLowStockParts(),
     productsStore.fetchProducts(),
   ])
-  
+
   // まずダッシュボードデータを取得（他の関数が依存するため）
   await fetchDashboardData()
-  
+
   // その後で他のデータを並行取得
   await Promise.all([
     fetchCalendarData(),
     fetchManufacturingCapacities(),
     fetchProductStats(),
   ])
-  
+
   // ローディング終了
   isLoading.value = false
-  
+
   // ウィンドウリサイズイベントリスナー追加
   window.addEventListener('resize', updateCalendarAspectRatio)
 })
