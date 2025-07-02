@@ -2,7 +2,7 @@ import axios from 'axios'
 import type {
   Part, CreatePart,
   Product, CreateProduct, ProductRecipe, CreateProductRecipe,
-  StockEntry, CreateStockEntry,
+  StockEntry,
   PartOrder, CreatePartOrder,
   ManufacturingRecord, CreateManufacturingRecord, ManufacturingCapacity,
   SalesRecord, CreateSalesRecord, SalesSummary
@@ -30,7 +30,7 @@ export const partsApi = {
   create: (data: CreatePart) => api.post<Part>('/parts', data),
   update: (id: number, data: Partial<CreatePart>) => api.put<Part>(`/parts/${id}`, data),
   delete: (id: number) => api.delete(`/parts/${id}`),
-  addStock: (id: number, data: CreateStockEntry) => api.post<Part>(`/parts/${id}/stock-entry`, data),
+  addStock: (id: number, data: { quantity: number, notes?: string }) => api.post<Part>(`/parts/${id}/stock-entry`, data),
   createOrder: (id: number, data: CreatePartOrder) => api.post<PartOrder>(`/parts/${id}/order`, data),
 }
 
@@ -58,6 +58,8 @@ export const ordersApi = {
   getAll: () => api.get<PartOrder[]>('/orders'),
   getById: (id: number) => api.get<PartOrder>(`/orders/${id}`),
   update: (id: number, data: Partial<CreatePartOrder>) => api.put<PartOrder>(`/orders/${id}`, data),
+  deliver: (id: number) => api.post<PartOrder>(`/orders/${id}/deliver`),
+  delete: (id: number) => api.delete(`/orders/${id}`),
   getCalendar: (year: number, month: number) => api.get<PartOrder[]>(`/orders/calendar/${year}/${month}`),
 }
 
@@ -122,6 +124,33 @@ export const dashboardApi = {
         part_id: number
       }>
     }>(`/dashboard/calendar/${year}/${month}`),
+  getAlerts: () =>
+    api.get<{
+      overdueOrders: Array<{
+        id: number
+        expected_delivery_date: string
+        quantity: number
+        status: string
+        part_name: string
+        current_stock: number
+        min_stock_alert: number
+      }>
+      upcomingOrders: Array<{
+        id: number
+        expected_delivery_date: string
+        quantity: number
+        status: string
+        part_name: string
+        current_stock: number
+        min_stock_alert: number
+      }>
+      lowStockParts: Array<{
+        id: number
+        name: string
+        current_stock: number
+        min_stock_alert: number
+      }>
+    }>('/dashboard/alerts'),
 }
 
 export default api

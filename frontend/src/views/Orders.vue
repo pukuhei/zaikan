@@ -7,7 +7,48 @@
 
     <!-- 発注一覧 -->
     <div class="card">
-      <h2 class="text-lg font-medium text-gray-900 mb-4">発注一覧</h2>
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-4 sm:space-y-0">
+        <h2 class="text-lg font-medium text-gray-900">発注一覧</h2>
+        
+        <!-- フィルター -->
+        <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
+          <div class="min-w-0 flex-1 sm:flex-none">
+            <select v-model="filterStatus" class="form-input-sm w-full sm:w-auto">
+              <option value="">全ての状態</option>
+              <option value="ordered">発注済み</option>
+              <option value="shipped">出荷済み</option>
+              <option value="delivered">納入済み</option>
+              <option value="cancelled">キャンセル</option>
+            </select>
+          </div>
+          <div class="min-w-0 flex-1 sm:flex-none">
+            <input 
+              v-model="filterPartName" 
+              type="text" 
+              placeholder="部品名で検索..." 
+              class="form-input-sm w-full sm:w-auto"
+            />
+          </div>
+          <div class="min-w-0 flex-1 sm:flex-none">
+            <select v-model="sortBy" class="form-input-sm w-full sm:w-auto">
+              <option value="order_date_desc">発注日（新しい順）</option>
+              <option value="order_date_asc">発注日（古い順）</option>
+              <option value="delivery_date_asc">納期（早い順）</option>
+              <option value="delivery_date_desc">納期（遅い順）</option>
+              <option value="part_name_asc">部品名（昇順）</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 件数表示 -->
+      <div class="mb-4 text-sm text-gray-600">
+        全{{ orders.length }}件中 {{ filteredOrders.length }}件を表示
+        <span v-if="filterStatus || filterPartName" class="text-blue-600">
+          （フィルター適用中）
+        </span>
+      </div>
+      
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
@@ -33,7 +74,7 @@
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="order in orders" :key="order.id">
+            <tr v-for="order in filteredOrders" :key="order.id">
               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                 {{ order.part_name }}
               </td>
@@ -57,9 +98,23 @@
                   {{ getStatusText(order.status) }}
                 </span>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm">
+              <td class="px-6 py-4 whitespace-nowrap text-sm space-x-2">
+                <button 
+                  v-if="order.status !== 'delivered'"
+                  @click="deliverOrder(order)" 
+                  class="btn-success text-xs px-3 py-1"
+                >
+                  納入
+                </button>
                 <button @click="updateOrderStatus(order)" class="btn-primary text-xs px-3 py-1">
-                  状態更新
+                  状態変更
+                </button>
+                <button 
+                  @click="deleteOrder(order)" 
+                  :disabled="order.status === 'delivered'"
+                  class="btn-danger text-xs px-3 py-1 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                >
+                  削除
                 </button>
               </td>
             </tr>
@@ -72,7 +127,7 @@
     <div v-if="showStatusModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
       <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
         <h3 class="text-lg font-bold text-gray-900 mb-4">
-          発注状態更新 - {{ selectedOrder?.part_name }}
+          発注状態変更 - {{ selectedOrder?.part_name }}
         </h3>
         <form @submit.prevent="submitStatusUpdate">
           <div class="space-y-4">
@@ -81,9 +136,11 @@
               <select v-model="statusForm.status" class="form-input" required>
                 <option value="ordered">発注済み</option>
                 <option value="shipped">出荷済み</option>
-                <option value="delivered">納入済み</option>
                 <option value="cancelled">キャンセル</option>
               </select>
+              <p class="text-sm text-gray-600 mt-2">
+                ※ 納入処理は「納入」ボタンを使用してください
+              </p>
             </div>
             <div>
               <label class="form-label">納入予定日</label>
@@ -142,9 +199,51 @@ const orders = ref<PartOrder[]>([])
 const showStatusModal = ref(false)
 const selectedOrder = ref<PartOrder | null>(null)
 
+// フィルター用の変数
+const filterStatus = ref('')
+const filterPartName = ref('')
+const sortBy = ref('order_date_desc')
+
 const statusForm = ref({
   status: '' as 'ordered' | 'shipped' | 'delivered' | 'cancelled',
   expected_delivery_date: '',
+})
+
+// フィルタリングされた発注一覧
+const filteredOrders = computed(() => {
+  let filtered = orders.value
+
+  // 状態でフィルター
+  if (filterStatus.value) {
+    filtered = filtered.filter(order => order.status === filterStatus.value)
+  }
+
+  // 部品名でフィルター
+  if (filterPartName.value) {
+    filtered = filtered.filter(order => 
+      order.part_name?.toLowerCase().includes(filterPartName.value.toLowerCase())
+    )
+  }
+
+  // ソート
+  filtered.sort((a, b) => {
+    switch (sortBy.value) {
+      case 'order_date_asc':
+        return a.order_date.localeCompare(b.order_date)
+      case 'order_date_desc':
+        return b.order_date.localeCompare(a.order_date)
+      case 'delivery_date_asc':
+        return (a.expected_delivery_date || '9999-12-31').localeCompare(b.expected_delivery_date || '9999-12-31')
+      case 'delivery_date_desc':
+        return (b.expected_delivery_date || '0000-01-01').localeCompare(a.expected_delivery_date || '0000-01-01')
+      case 'part_name_asc':
+        return (a.part_name || '').localeCompare(b.part_name || '')
+      default:
+        return b.order_date.localeCompare(a.order_date)
+    }
+  })
+
+  return filtered
 })
 
 const currentMonthDeliveries = computed(() => {
@@ -204,6 +303,37 @@ const submitStatusUpdate = async () => {
     closeModal()
   } catch (error) {
     console.error('Failed to update order status:', error)
+  }
+}
+
+const deliverOrder = async (order: PartOrder) => {
+  const confirmMessage = `発注を納入完了にしますか？\n\n部品: ${order.part_name}\n数量: ${order.quantity}個\n\n※ 在庫が自動的に更新され、入荷記録も作成されます`
+  if (!confirm(confirmMessage)) return
+
+  try {
+    await ordersApi.deliver(order.id)
+    await fetchOrders()
+  } catch (error) {
+    console.error('Failed to deliver order:', error)
+    alert('納入処理に失敗しました')
+  }
+}
+
+const deleteOrder = async (order: PartOrder) => {
+  if (order.status === 'delivered') {
+    alert('納入済みの発注は削除できません')
+    return
+  }
+  
+  const confirmMessage = `発注を削除しますか？\n部品: ${order.part_name}\n数量: ${order.quantity}個`
+  if (!confirm(confirmMessage)) return
+
+  try {
+    await ordersApi.delete(order.id)
+    await fetchOrders()
+  } catch (error) {
+    console.error('Failed to delete order:', error)
+    alert('発注の削除に失敗しました')
   }
 }
 

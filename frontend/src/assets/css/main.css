@@ -73,6 +73,10 @@
     @apply alert bg-red-50 text-red-800 border border-red-200;
   }
   
+  .alert-danger {
+    @apply alert bg-red-50 text-red-800 border border-red-200;
+  }
+  
   .alert-info {
     @apply alert bg-blue-50 text-blue-800 border border-blue-200;
   }

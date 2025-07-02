@@ -155,17 +155,16 @@
               <label class="form-label">入荷数量 *</label>
               <input v-model.number="stockForm.quantity" type="number" min="1" required class="form-input" />
             </div>
-            <div>
-              <label class="form-label">単価</label>
-              <input v-model.number="stockForm.unit_price" type="number" step="0.01" min="0" class="form-input" />
-            </div>
-            <div>
-              <label class="form-label">入荷日 *</label>
-              <input v-model="stockForm.entry_date" type="date" required class="form-input" />
+            <div class="bg-blue-50 p-4 rounded-lg">
+              <h4 class="text-sm font-medium text-blue-900 mb-2">自動設定項目:</h4>
+              <ul class="text-xs text-blue-800 space-y-1">
+                <li>• 入荷日: 今日（{{ new Date().toLocaleDateString('ja-JP') }}）</li>
+                <li>• 単価: 部品登録時の単価（¥{{ selectedPart?.unit_price?.toLocaleString() || '未設定' }}）</li>
+              </ul>
             </div>
             <div>
               <label class="form-label">備考</label>
-              <textarea v-model="stockForm.notes" rows="3" class="form-input"></textarea>
+              <textarea v-model="stockForm.notes" rows="3" class="form-input" placeholder="入荷に関する備考があれば入力してください"></textarea>
             </div>
           </div>
           <div class="mt-6 flex space-x-3">
@@ -210,7 +209,7 @@ import { ref, computed, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { format } from 'date-fns'
 import { usePartsStore } from '@/stores/parts'
-import type { Part, CreatePart, CreateStockEntry, CreatePartOrder } from '@/types'
+import type { Part, CreatePart, CreatePartOrder } from '@/types'
 
 const partsStore = usePartsStore()
 const { parts } = storeToRefs(partsStore)
@@ -231,10 +230,8 @@ const partForm = ref<CreatePart>({
   min_stock_alert: 0,
 })
 
-const stockForm = ref<CreateStockEntry>({
+const stockForm = ref({
   quantity: 1,
-  unit_price: undefined,
-  entry_date: format(new Date(), 'yyyy-MM-dd'),
   notes: '',
 })
 
@@ -281,6 +278,10 @@ const resetForm = () => {
     current_stock: 0,
     min_stock_alert: 0,
   }
+  stockForm.value = {
+    quantity: 1,
+    notes: '',
+  }
 }
 
 const resetFilters = () => {
@@ -303,8 +304,6 @@ const openStockModal = (part: Part) => {
   selectedPart.value = part
   stockForm.value = {
     quantity: 1,
-    unit_price: part.unit_price,
-    entry_date: format(new Date(), 'yyyy-MM-dd'),
     notes: '',
   }
   showStockModal.value = true

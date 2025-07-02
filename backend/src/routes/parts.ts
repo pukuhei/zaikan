@@ -127,10 +127,12 @@ router.delete('/:id', (req, res, next) => {
 router.post('/:id/stock-entry', (req, res, next) => {
   try {
     const { id } = req.params;
-    const validatedData = CreateStockEntrySchema.parse({
-      ...req.body,
-      part_id: parseInt(id)
-    });
+    const { quantity, notes } = req.body;
+    
+    // 数量のみ検証
+    if (!quantity || quantity <= 0) {
+      return res.status(400).json({ error: '数量は1以上である必要があります' });
+    }
     
     const part = db.prepare('SELECT * FROM parts WHERE id = ?').get(id) as any;
     if (!part) {
@@ -138,18 +140,21 @@ router.post('/:id/stock-entry', (req, res, next) => {
     }
     
     const transaction = db.transaction(() => {
-      // 在庫入荷記録を追加
+      // 在庫入荷記録を追加（金額は部品単価、日付は今日を自動設定）
       const entryStmt = db.prepare(`
         INSERT INTO stock_entries (part_id, quantity, unit_price, entry_date, notes)
         VALUES (?, ?, ?, ?, ?)
       `);
       
+      const today = new Date().toISOString().split('T')[0];
+      const entryNotes = notes || '手動入荷処理';
+      
       entryStmt.run(
-        validatedData.part_id,
-        validatedData.quantity,
-        validatedData.unit_price,
-        validatedData.entry_date,
-        validatedData.notes
+        parseInt(id),
+        quantity,
+        part.unit_price || null,
+        today,
+        entryNotes
       );
       
       // 部品の在庫数を更新
@@ -157,7 +162,7 @@ router.post('/:id/stock-entry', (req, res, next) => {
         UPDATE parts SET current_stock = current_stock + ?, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `);
-      updateStmt.run(validatedData.quantity, id);
+      updateStmt.run(quantity, id);
     });
     
     transaction();

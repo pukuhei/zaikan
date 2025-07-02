@@ -53,25 +53,60 @@ router.put('/:id', (req, res, next) => {
       return res.status(404).json({ error: '発注が見つかりません' });
     }
     
-    const updateFields = [];
-    const updateValues = [];
+    // 「納入済み」に変更する場合は在庫を自動更新
+    const isChangingToDelivered = validatedData.status === 'delivered' && order.status !== 'delivered';
     
-    Object.entries(validatedData).forEach(([key, value]) => {
-      if (value !== undefined) {
-        updateFields.push(`${key} = ?`);
-        updateValues.push(value);
+    const transaction = db.transaction(() => {
+      // 発注情報を更新
+      const updateFields = [];
+      const updateValues = [];
+      
+      Object.entries(validatedData).forEach(([key, value]) => {
+        if (value !== undefined) {
+          updateFields.push(`${key} = ?`);
+          updateValues.push(value);
+        }
+      });
+      
+      if (updateFields.length > 0) {
+        updateFields.push('updated_at = CURRENT_TIMESTAMP');
+        updateValues.push(id);
+        
+        const stmt = db.prepare(`
+          UPDATE part_orders SET ${updateFields.join(', ')} WHERE id = ?
+        `);
+        stmt.run(...updateValues);
+      }
+      
+      // 「納入済み」に変更した場合は在庫を自動更新
+      if (isChangingToDelivered) {
+        // 在庫入荷記録を追加
+        const stockEntryStmt = db.prepare(`
+          INSERT INTO stock_entries (part_id, quantity, unit_price, entry_date, notes)
+          VALUES (?, ?, ?, ?, ?)
+        `);
+        
+        const today = new Date().toISOString().split('T')[0];
+        const notes = `発注ID:${id} からの自動在庫更新`;
+        
+        stockEntryStmt.run(
+          order.part_id,
+          order.quantity,
+          order.part_unit_price || null,
+          today,
+          notes
+        );
+        
+        // 部品の在庫数を更新
+        const updatePartStmt = db.prepare(`
+          UPDATE parts SET current_stock = current_stock + ?, updated_at = CURRENT_TIMESTAMP
+          WHERE id = ?
+        `);
+        updatePartStmt.run(order.quantity, order.part_id);
       }
     });
     
-    if (updateFields.length > 0) {
-      updateFields.push('updated_at = CURRENT_TIMESTAMP');
-      updateValues.push(id);
-      
-      const stmt = db.prepare(`
-        UPDATE part_orders SET ${updateFields.join(', ')} WHERE id = ?
-      `);
-      stmt.run(...updateValues);
-    }
+    transaction();
     
     const updatedOrder = db.prepare(`
       SELECT po.*, p.name as part_name, p.unit_price as part_unit_price
@@ -81,6 +116,93 @@ router.put('/:id', (req, res, next) => {
     `).get(id);
     
     res.json(updatedOrder);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// 発注納入（専用エンドポイント）
+router.post('/:id/deliver', (req, res, next) => {
+  try {
+    const { id } = req.params;
+    
+    const order = db.prepare('SELECT * FROM part_orders WHERE id = ?').get(id) as any;
+    if (!order) {
+      return res.status(404).json({ error: '発注が見つかりません' });
+    }
+    
+    if (order.status === 'delivered') {
+      return res.status(400).json({ error: '既に納入済みです' });
+    }
+    
+    // 部品情報を取得（単価取得のため）
+    const part = db.prepare('SELECT unit_price FROM parts WHERE id = ?').get(order.part_id) as any;
+    
+    const transaction = db.transaction(() => {
+      // 発注状態を「納入済み」に更新
+      const updateOrderStmt = db.prepare(`
+        UPDATE part_orders SET status = 'delivered', updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `);
+      updateOrderStmt.run(id);
+      
+      // 在庫入荷記録を追加（現在の日付、部品の単価を使用）
+      const stockEntryStmt = db.prepare(`
+        INSERT INTO stock_entries (part_id, quantity, unit_price, entry_date, notes)
+        VALUES (?, ?, ?, ?, ?)
+      `);
+      
+      const today = new Date().toISOString().split('T')[0];
+      const notes = `発注ID:${id} からの自動納入処理`;
+      
+      stockEntryStmt.run(
+        order.part_id,
+        order.quantity,
+        part.unit_price || null,
+        today,
+        notes
+      );
+      
+      // 部品の在庫数を更新
+      const updatePartStmt = db.prepare(`
+        UPDATE parts SET current_stock = current_stock + ?, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `);
+      updatePartStmt.run(order.quantity, order.part_id);
+    });
+    
+    transaction();
+    
+    const updatedOrder = db.prepare(`
+      SELECT po.*, p.name as part_name, p.unit_price as part_unit_price
+      FROM part_orders po
+      JOIN parts p ON po.part_id = p.id
+      WHERE po.id = ?
+    `).get(id);
+    
+    res.json(updatedOrder);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// 発注削除
+router.delete('/:id', (req, res, next) => {
+  try {
+    const { id } = req.params;
+    
+    const order = db.prepare('SELECT * FROM part_orders WHERE id = ?').get(id) as any;
+    if (!order) {
+      return res.status(404).json({ error: '発注が見つかりません' });
+    }
+    
+    // 既に納入済みの発注は削除不可
+    if (order.status === 'delivered') {
+      return res.status(400).json({ error: '納入済みの発注は削除できません' });
+    }
+    
+    db.prepare('DELETE FROM part_orders WHERE id = ?').run(id);
+    res.status(204).send();
   } catch (error) {
     next(error);
   }

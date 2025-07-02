@@ -208,5 +208,68 @@ function calculateDailyCapacityWithDeliveries(
   }
 }
 
+// 納入予定アラート取得
+router.get('/alerts', (req, res, next) => {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const threeDaysFromNow = addDays(new Date(), 3).toISOString().split('T')[0];
+    
+    // 納期が過ぎている発注
+    const overdueOrders = db.prepare(`
+      SELECT 
+        po.id,
+        po.expected_delivery_date,
+        po.quantity,
+        po.status,
+        p.name as part_name,
+        p.current_stock,
+        p.min_stock_alert
+      FROM part_orders po
+      JOIN parts p ON po.part_id = p.id
+      WHERE po.expected_delivery_date < ?
+        AND po.status IN ('ordered', 'shipped')
+      ORDER BY po.expected_delivery_date ASC
+    `).all(today) as any[];
+    
+    // 3日以内に納期の発注
+    const upcomingOrders = db.prepare(`
+      SELECT 
+        po.id,
+        po.expected_delivery_date,
+        po.quantity,
+        po.status,
+        p.name as part_name,
+        p.current_stock,
+        p.min_stock_alert
+      FROM part_orders po
+      JOIN parts p ON po.part_id = p.id
+      WHERE po.expected_delivery_date BETWEEN ? AND ?
+        AND po.status IN ('ordered', 'shipped')
+      ORDER BY po.expected_delivery_date ASC
+    `).all(today, threeDaysFromNow) as any[];
+    
+    // 在庫不足の部品
+    const lowStockParts = db.prepare(`
+      SELECT 
+        id,
+        name,
+        current_stock,
+        min_stock_alert
+      FROM parts
+      WHERE current_stock <= min_stock_alert
+        AND min_stock_alert > 0
+      ORDER BY (current_stock - min_stock_alert) ASC
+    `).all() as any[];
+    
+    res.json({
+      overdueOrders,
+      upcomingOrders,
+      lowStockParts
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 
 export default router;

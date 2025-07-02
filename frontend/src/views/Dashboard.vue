@@ -17,8 +17,14 @@
     <div v-else>
 
     <!-- 在庫警告アラート -->
-    <div v-if="lowStockParts.length > 0" class="alert-warning">
-      <div class="flex">
+    <div v-if="lowStockParts.length > 0 && !isDismissed('lowStock')" class="alert-warning relative">
+      <button 
+        @click="dismissAlert('lowStock')"
+        class="absolute top-2 right-2 text-yellow-600 hover:text-yellow-800 transition-colors"
+      >
+        <XMarkIcon class="h-5 w-5" />
+      </button>
+      <div class="flex pr-8">
         <div class="flex-shrink-0">
           <ExclamationTriangleIcon class="h-5 w-5 text-yellow-400" />
         </div>
@@ -32,6 +38,63 @@
               </li>
               <li v-if="lowStockParts.length > 3">
                 他 {{ lowStockParts.length - 3 }}個の部品...
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 納入予定アラート -->
+    <div v-if="overdueOrders.length > 0 && !isDismissed('overdueOrders')" class="alert-danger relative">
+      <button 
+        @click="dismissAlert('overdueOrders')"
+        class="absolute top-2 right-2 text-red-600 hover:text-red-800 transition-colors"
+      >
+        <XMarkIcon class="h-5 w-5" />
+      </button>
+      <div class="flex pr-8">
+        <div class="flex-shrink-0">
+          <ExclamationTriangleIcon class="h-5 w-5 text-red-400" />
+        </div>
+        <div class="ml-3">
+          <h3 class="text-sm font-medium text-red-800">納期遅れの発注</h3>
+          <div class="mt-2 text-sm text-red-700">
+            <p>{{ overdueOrders.length }}件の発注が納期を過ぎています。</p>
+            <ul class="list-disc list-inside mt-1">
+              <li v-for="order in overdueOrders.slice(0, 3)" :key="order.id">
+                {{ order.part_name }}: {{ order.quantity }}個 (予定: {{ formatDate(order.expected_delivery_date) }})
+              </li>
+              <li v-if="overdueOrders.length > 3">
+                他 {{ overdueOrders.length - 3 }}件の発注...
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="upcomingOrders.length > 0 && !isDismissed('upcomingOrders')" class="alert-info relative">
+      <button 
+        @click="dismissAlert('upcomingOrders')"
+        class="absolute top-2 right-2 text-blue-600 hover:text-blue-800 transition-colors"
+      >
+        <XMarkIcon class="h-5 w-5" />
+      </button>
+      <div class="flex pr-8">
+        <div class="flex-shrink-0">
+          <InformationCircleIcon class="h-5 w-5 text-blue-400" />
+        </div>
+        <div class="ml-3">
+          <h3 class="text-sm font-medium text-blue-800">間もなく納期の発注</h3>
+          <div class="mt-2 text-sm text-blue-700">
+            <p>{{ upcomingOrders.length }}件の発注が3日以内に納期予定です。</p>
+            <ul class="list-disc list-inside mt-1">
+              <li v-for="order in upcomingOrders.slice(0, 3)" :key="order.id">
+                {{ order.part_name }}: {{ order.quantity }}個 (予定: {{ formatDate(order.expected_delivery_date) }})
+              </li>
+              <li v-if="upcomingOrders.length > 3">
+                他 {{ upcomingOrders.length - 3 }}件の発注...
               </li>
             </ul>
           </div>
@@ -298,6 +361,8 @@ import dayGridPlugin from '@fullcalendar/daygrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import {
   ExclamationTriangleIcon,
+  InformationCircleIcon,
+  XMarkIcon,
   CubeIcon,
   ShoppingBagIcon,
   CurrencyYenIcon,
@@ -331,6 +396,14 @@ const productStats = ref<Record<number, {
   monthlyRevenue: number;
 }>>({})
 const isLoading = ref(true)
+
+// Alert data
+const overdueOrders = ref<any[]>([])
+const upcomingOrders = ref<any[]>([])
+const alertLowStockParts = ref<any[]>([])
+
+// Dismissed alerts (per day)
+const dismissedAlerts = ref<Set<string>>(new Set())
 
 // Modal states
 const showQuickManufactureModal = ref(false)
@@ -482,6 +555,48 @@ const fetchProductStats = async () => {
   productStats.value = stats
 }
 
+// Alert functions
+const fetchAlerts = async () => {
+  try {
+    const response = await dashboardApi.getAlerts()
+    overdueOrders.value = response.data.overdueOrders
+    upcomingOrders.value = response.data.upcomingOrders
+    alertLowStockParts.value = response.data.lowStockParts
+  } catch (error) {
+    console.error('Failed to fetch alerts:', error)
+  }
+}
+
+// アラート非表示機能
+const dismissAlert = (alertType: string) => {
+  const today = new Date().toISOString().split('T')[0]
+  const key = `${alertType}-${today}`
+  dismissedAlerts.value.add(key)
+  
+  // localStorageに保存
+  const dismissed = Array.from(dismissedAlerts.value)
+  localStorage.setItem('dismissedAlerts', JSON.stringify(dismissed))
+}
+
+const isDismissed = (alertType: string): boolean => {
+  const today = new Date().toISOString().split('T')[0]
+  const key = `${alertType}-${today}`
+  return dismissedAlerts.value.has(key)
+}
+
+// ページ読み込み時に非表示設定を復元
+const loadDismissedAlerts = () => {
+  try {
+    const stored = localStorage.getItem('dismissedAlerts')
+    if (stored) {
+      const dismissed = JSON.parse(stored) as string[]
+      dismissedAlerts.value = new Set(dismissed)
+    }
+  } catch (error) {
+    console.error('Failed to load dismissed alerts:', error)
+  }
+}
+
 // Modal functions
 const openQuickManufactureModal = (product: Product) => {
   selectedProduct.value = product
@@ -563,6 +678,9 @@ const updateCalendarAspectRatio = () => {
 }
 
 onMounted(async () => {
+  // 非表示アラート設定を読み込み
+  loadDismissedAlerts()
+  
   await Promise.all([
     partsStore.fetchParts(),
     partsStore.fetchLowStockParts(),
@@ -577,6 +695,7 @@ onMounted(async () => {
     fetchCalendarData(),
     fetchManufacturingCapacities(),
     fetchProductStats(),
+    fetchAlerts(),
   ])
 
   // ローディング終了

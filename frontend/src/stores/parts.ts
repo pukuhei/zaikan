@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { partsApi, stockEntriesApi } from '@/services/api'
-import type { Part, CreatePart, StockEntry, CreateStockEntry, CreatePartOrder } from '@/types'
+import type { Part, CreatePart, StockEntry, CreatePartOrder } from '@/types'
 
 export const usePartsStore = defineStore('parts', () => {
   const parts = ref<Part[]>([])
@@ -89,7 +89,7 @@ export const usePartsStore = defineStore('parts', () => {
     }
   }
 
-  async function addStock(id: number, data: CreateStockEntry) {
+  async function addStock(id: number, data: { quantity: number, notes?: string }) {
     loading.value = true
     error.value = null
     try {
